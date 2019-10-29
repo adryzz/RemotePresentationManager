@@ -1,2 +1,26 @@
 # RemotePresentationManager
 This project started as a presentation manager, but finished as a trolling tool
+
+LEFT/RIGHT > FRECCINE
+SHUTDOWN > SPEGNI
+REBOOT > RIAVVIA
+CRASH > CRASHA
+VOLUME [NUMERO] > IMPOSTA IL VOLUME
+MUTE/UNMUTE > MUTA/SMUTA IL VOLUME
+ALTF4 > PREME ALT+F4
+ESC > PREME ESC
+F5 > PREME F5
+PLAY [SUONO] > RIPRODUCE UN SUONO
+KEY [TESTO] > DIGITA LE PAROLE
+KEY ENTER > PREME ENTER
+KEY {BACKSPACE} > CANCELLA
+
+___________________
+suoni disponibili: 
+ERROR > ERRORE
+DEVICEIN/OUT > (S)COLLEGATO QUALCOSA
+FOREGROUND/BACKGROUND > SUONI SCASSACOGLIONI
+
+___________________
+su VOLUME i numeri vanno da 0 a 100
+___________________
