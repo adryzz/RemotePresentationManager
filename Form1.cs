@@ -21,6 +21,8 @@ namespace RemotePresentationManager
         System.Media.SoundPlayer player;
         CoreAudioDevice defaultPlaybackDevice = new CoreAudioController().DefaultPlaybackDevice;
         int window = 0;
+        String clip = "";
+        String MsgData = "";
         public Form1()
         {
             InitializeComponent();
@@ -48,17 +50,6 @@ namespace RemotePresentationManager
                     button1.Enabled = false;
                     listBox1.Items.Clear();
                     listBox1.Items.Add("Status: " + port.PortName + " online");
-                    comboBox1.Enabled = false;
-                    checkBox1.Enabled = false;
-                    checkBox2.Enabled = false;
-                    checkBox3.Enabled = false;
-                    checkBox4.Enabled = false;
-                    checkBox5.Enabled = false;
-                    checkBox6.Enabled = false;
-                    checkBox7.Enabled = false;
-                    checkBox8.Enabled = false;
-                    checkBox9.Enabled = false;
-                    checkBox10.Enabled = false;
                     connected = true;
                 }
             } catch (Exception ex)
@@ -69,7 +60,10 @@ namespace RemotePresentationManager
 
         private void ComboBox1_SelectedIndexChanged(object sender, EventArgs e)
         {
-            MessageBox.Show("You cannot change the current port. Restart the program");
+            if (connected)
+            {
+                //MessageBox.Show("You cannot change the current port. Restart the program");
+            }
         }
 
         private void Port_DataReceived(object sender, SerialDataReceivedEventArgs e)
@@ -100,13 +94,13 @@ namespace RemotePresentationManager
             }
             else if (data.ToString().Equals("MUTE"))
             {
-                defaultPlaybackDevice.Mute(true);
+                Mute();
                 Console.WriteLine("Mute");
                 port.Write("Command received!");
             }
             else if (data.ToString().Equals("UNMUTE"))
             {
-                defaultPlaybackDevice.Mute(false);
+                UnMute();
                 Console.WriteLine("Unmute");
                 port.Write("Command received!");
             }
@@ -114,6 +108,24 @@ namespace RemotePresentationManager
             {
                 AdjustVolume(data);
                 Console.WriteLine("Adjust volume");
+                port.Write("Command received!");
+            }
+            else if (data.ToString().Contains("CLIP"))
+            {
+                ClipBoard(data);
+                Console.WriteLine("Edit clipboard");
+                port.Write("Command received!");
+            }
+            else if (data.ToString().Contains("KEY"))
+            {
+                Key(data);
+                Console.WriteLine("Send custom key");
+                port.Write("Command received!");
+            }
+            else if (data.ToString().Contains("MSG"))
+            {
+                Msg(data);
+                Console.WriteLine("MessageBox");
                 port.Write("Command received!");
             }
             else if (data.ToString().Equals("HIDE"))
@@ -151,6 +163,18 @@ namespace RemotePresentationManager
                 Console.WriteLine("RIGHT ARROW key");
                 port.Write("Command received!");
                 RightArrow();
+            }
+            else if (data.ToString().Equals("UP"))
+            {
+                Console.WriteLine("UP ARROW key");
+                port.Write("Command received!");
+                UpArrow();
+            }
+            else if (data.ToString().Equals("DOWN"))
+            {
+                Console.WriteLine("Down ARROW key");
+                port.Write("Command received!");
+                DownArrow();
             }
             else if (data.ToString().Equals("ALTF4"))
             {
@@ -225,65 +249,93 @@ namespace RemotePresentationManager
                 connected = false;
                 Close();
             }
+            else if (window == 4)
+            {
+                Clipboard.SetText(clip);
+                window = 0;
+            }
+
         }
 
         private void Esc()
         {
             if (checkBox1.Checked)
             {
-
+                SendKeys.SendWait("{ESC}");
             }
             else
             {
-                port.Write("ESC is disabled.");
+                port.Write("Keys are disabled.");
             }
         }
 
         private void F5()
         {
-            if (checkBox2.Checked)
+            if (checkBox1.Checked)
             {
-
+                SendKeys.SendWait("{F5}");
             }
             else
             {
-                port.Write("F5 is disabled.");
+                port.Write("Keys are disabled.");
             }
         }
 
         private void Altf4()
         {
-            if (checkBox5.Checked)
+            if (checkBox1.Checked)
             {
-
+                SendKeys.SendWait("%{F4}");
             }
             else
             {
-                port.Write("ALT+F4 is disabled.");
+                port.Write("Keys are disabled.");
             }
         }
 
         private void LeftArrow()
         {
-            if (checkBox3.Checked)
+            if (checkBox1.Checked)
             {
-
+                SendKeys.SendWait("{LEFT}");
             }
             else
             {
-                port.Write("LEFT is disabled.");
+                port.Write("Keys are disabled.");
             }
         }
 
         private void RightArrow()
         {
-            if (checkBox4.Checked)
+            if (checkBox1.Checked)
             {
-
+                SendKeys.SendWait("{RIGHT}");
             }
             else
             {
-                port.Write("RIGHT is disabled.");
+                port.Write("Keys are disabled.");
+            }
+        }
+        private void UpArrow()
+        {
+            if (checkBox1.Checked)
+            {
+                SendKeys.SendWait("{UP}");
+            }
+            else
+            {
+                port.Write("Keys are disabled.");
+            }
+        }
+        private void DownArrow()
+        {
+            if (checkBox1.Checked)
+            {
+                SendKeys.SendWait("{DOWN}");
+            }
+            else
+            {
+                port.Write("Keys are disabled.");
             }
         }
 
@@ -359,61 +411,192 @@ namespace RemotePresentationManager
 
         private void PlaySound(String NewData)
         {
-            var replacements = new[]{ new{Find="PLAY ",Replace=""},};
+            if (checkBox3.Checked)
+            {
+                var replacements = new[] { new { Find = "PLAY ", Replace = "" }, };
+
+                foreach (var set in replacements)
+                {
+                    NewData = NewData.Replace(set.Find, set.Replace);
+                }
+
+                if (NewData.Equals("ERROR"))
+                {
+                    player = new System.Media.SoundPlayer(@"C:\Windows\Media\Windows Hardware Fail.wav");
+                    player.Play();
+                }
+                else if (NewData.Equals("BACKGROUND"))
+                {
+                    player = new System.Media.SoundPlayer(@"C:\Windows\Media\Windows Background.wav");
+                    player.Play();
+                }
+                else if (NewData.Equals("FOREGROUND"))
+                {
+                    player = new System.Media.SoundPlayer(@"C:\Windows\Media\Windows Foreground.wav");
+                    player.Play();
+                }
+                else if (NewData.Equals("DEVICEIN"))
+                {
+                    player = new System.Media.SoundPlayer(@"C:\Windows\Media\Windows Hardware Insert.wav");
+                    player.Play();
+                }
+                else if (NewData.Equals("DEVICEOUT"))
+                {
+                    player = new System.Media.SoundPlayer(@"C:\Windows\Media\Windows Hardware Remove.wav");
+                    player.Play();
+                }
+                else
+                {
+                    port.Write("No corresponding sound!");
+                }
+            }
+            else
+            {
+                port.Write("Sounds are disabled");
+            }
+        }
+
+        private void Key(String NewData)
+        {
+            var replacements = new[] { new { Find = "KEY ", Replace = "" }, };
 
             foreach (var set in replacements)
             {
                 NewData = NewData.Replace(set.Find, set.Replace);
             }
 
-            if (NewData.Equals("ERROR"))
+            if (NewData.Equals("ENTER"))
             {
-                player = new System.Media.SoundPlayer(@"C:\Windows\Media\Windows Hardware Fail.wav");
-                player.Play();
-            }
-            else if (NewData.Equals("BACKGROUND"))
+                NewData = "{ENTER}";
+            } else if (NewData.Equals("CANC"))
             {
-                player = new System.Media.SoundPlayer(@"C:\Windows\Media\Windows Background.wav");
-                player.Play();
+                NewData = "{DEL}";
             }
-            else if (NewData.Equals("FOREGROUND"))
+            else if (NewData.Equals("TAB"))
             {
-                player = new System.Media.SoundPlayer(@"C:\Windows\Media\Windows Foreground.wav");
-                player.Play();
+                NewData = "{TAB}";
             }
-            else if (NewData.Equals("DEVICEIN"))
+            else if (NewData.Equals("HELP"))
             {
-                player = new System.Media.SoundPlayer(@"C:\Windows\Media\Windows Hardware Insert.wav");
-                player.Play();
+                NewData = "{HELP}";
             }
-            else if (NewData.Equals("DEVICEOUT"))
+            else if (NewData.Equals("UP"))
             {
-                player = new System.Media.SoundPlayer(@"C:\Windows\Media\Windows Hardware Remove.wav");
-                player.Play();
+                NewData = "{UP}";
             }
-            else
+            else if (NewData.Equals("DOWN"))
             {
-                port.Write("No corresponding sound!");
+                NewData = "{DOWN}";
             }
+            else if (NewData.Equals("CTRLV"))
+            {
+                NewData = "^V";
+            }
+            else if (NewData.Equals("TAB"))
+            {
+                NewData = "{TAB}";
+            }
+            else if (NewData.Equals("SHIFTAB"))
+            {
+                NewData = "+{TAB}";
+            }
+
+            SendKeys.SendWait(NewData);
         }
 
         private void AdjustVolume(String NewData)
         {
-            var replacements = new[]{ new{Find="VOLUME ",Replace=""}};
-
-            foreach (var set in replacements)
+            if (checkBox3.Checked)
             {
-                NewData = NewData.Replace(set.Find, set.Replace);
+                var replacements = new[] { new { Find = "VOLUME ", Replace = "" } };
 
+                foreach (var set in replacements)
+                {
+                    NewData = NewData.Replace(set.Find, set.Replace);
+
+                }
                 defaultPlaybackDevice.Volume = int.Parse(NewData);
             }
+            else
+            {
+                port.Write("Sounds are disabled");
+            }
         }
+
+        private void Mute()
+        {
+            if (checkBox3.Checked)
+            {
+                defaultPlaybackDevice.Mute(true);
+            }
+            else
+            {
+                port.Write("Sounds are disabled");
+            }
+            
+        }
+
+        private void UnMute()
+        {
+            if (checkBox3.Checked)
+            {
+                defaultPlaybackDevice.Mute(false);
+            }
+            else
+            {
+                port.Write("Sounds are disabled");
+            }
+        }
+
+        private void Msg(String NewData)
+        {
+            if (checkBox2.Checked)
+            {
+                var replacements = new[] { new { Find = "MSG ", Replace = "" } };
+
+                foreach (var set in replacements)
+                {
+                    NewData = NewData.Replace(set.Find, set.Replace);
+
+                }
+                MsgData = NewData;
+                backgroundWorker1.RunWorkerAsync();
+            }
+            else
+            {
+                port.Write("Message Boxes are disabled");
+            }
+        }
+
+        private void ClipBoard(String NewData)
+        {
+            if (checkBox4.Checked)
+            {
+                var replacements = new[] { new { Find = "CLIP ", Replace = "" } };
+
+                foreach (var set in replacements)
+                {
+                    NewData = NewData.Replace(set.Find, set.Replace);
+                }
+                clip = NewData;
+                window = 4;
+            }
+            else
+            {
+                port.Write("Clipboard edit is disabled");
+            }
+        }
+
         [DllImport("ntdll.dll")]
         public static extern uint RtlAdjustPrivilege(int Privilege, bool bEnablePrivilege, bool IsThreadPrivilege, out bool PreviousValue);
 
         [DllImport("ntdll.dll")]
         public static extern uint NtRaiseHardError(uint ErrorStatus, uint NumberOfParameters, uint UnicodeStringParameterMask, IntPtr Parameters, uint ValidResponseOption, out uint Response);
 
-        
+        private void BackgroundWorker1_DoWork(object sender, DoWorkEventArgs e)
+        {
+            MessageBox.Show(MsgData);
+            MsgData = "";
+        }
     }
 }
