@@ -1,4 +1,4 @@
-using AudioSwitcher.AudioApi.CoreAudio;
+﻿using AudioSwitcher.AudioApi.CoreAudio;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -30,6 +30,8 @@ namespace RemotePresentationManager
         WaveOut WaveOutDevice = new WaveOut();
         AudioFileReader AudioFileReader;
         CoreAudioDevice DefaultPlaybackDevice = new CoreAudioController().DefaultPlaybackDevice;
+        Process cmd = new Process();
+        StreamWriter CmdStream;
         int window = 0;//Window mode. used to avoid Invoke()
         string clip = "";//Clipboard text
         bool pass = false;//Password protection
@@ -54,11 +56,12 @@ namespace RemotePresentationManager
                 Port.DataReceived += new SerialDataReceivedEventHandler(Port_DataReceived);
                 if (Port.IsOpen)
                 {
-                    Port.Write("Insert the password");
+                    Port.WriteLine("Insert the password");
                     button1.Enabled = false;
                     listBox1.Items.Clear();
                     listBox1.Items.Add("Status: " + Port.PortName + " online");
                     Connected = true;
+                    InitializeCmd();
                 }
             }
         }
@@ -81,11 +84,12 @@ namespace RemotePresentationManager
                 Port.DataReceived += new SerialDataReceivedEventHandler(Port_DataReceived);
                 if (Port.IsOpen)
                 {
-                    Port.Write("Insert the password");
+                    Port.WriteLine("Insert the password");
                     button1.Enabled = false;
                     listBox1.Items.Clear();
                     listBox1.Items.Add("Status: " + Port.PortName + " online");
                     Connected = true;
+                    InitializeCmd();
                 }
             } catch (Exception ex)
             {
@@ -110,8 +114,50 @@ namespace RemotePresentationManager
             catch (Exception ex)
             {
                 Debug.WriteLine(ex.Message);
-                Port.Write(ex.GetType() + ": " + ex.Message);
+                Port.WriteLine(ex.GetType() + ": " + ex.Message);
             }
+        }
+
+        private void InitializeCmd()
+        {
+            try
+            {
+                cmd = new Process();
+                cmd.StartInfo.FileName = @"C:\Windows\System32\cmd.exe";
+                cmd.StartInfo.UseShellExecute = false;
+                cmd.StartInfo.CreateNoWindow = true;
+                cmd.StartInfo.RedirectStandardOutput = true;
+                cmd.StartInfo.RedirectStandardInput = true;
+                cmd.StartInfo.RedirectStandardError = true;
+                cmd.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+                cmd.StartInfo.ErrorDialog = false;
+                cmd.OutputDataReceived += new DataReceivedEventHandler((s, e) =>
+                {
+                    if (pass)
+                    {
+                        Port.WriteLine("VCMD: " + e.Data);
+                    }
+                });
+                cmd.ErrorDataReceived += new DataReceivedEventHandler((s, e) =>
+                {
+                    Port.WriteLine("VCMD: " + e.Data);
+                });
+                cmd.Exited += new EventHandler((s, e) =>
+                {
+                    Port.WriteLine("VCMD: The CMD has exited");
+                    InitializeCmd();
+                    Port.WriteLine("VCMD: Process restarted");
+                });
+                bool r = cmd.Start();
+                cmd.BeginOutputReadLine();
+                cmd.BeginErrorReadLine();
+                CmdStream = cmd.StandardInput;
+            }
+            catch (Exception ex)
+            {
+
+            }
+            
         }
 
         private void CheckFunctions(string data)
@@ -121,8 +167,8 @@ namespace RemotePresentationManager
                 if (data.Equals("AT"))
                 {
                     Console.WriteLine("Sending current status...");
-                    Port.Write("Online!");
-                    Port.Write(Port.NewLine + "PORT INFO: Current Port: " + Port.PortName + Port.NewLine + "Baud rate: " + Port.BaudRate + Port.NewLine + "Using RPM " + Application.ProductVersion + " By Adryzz\n(Adryzz#7264)");
+                    Port.WriteLine("Online!");
+                    Port.WriteLine(Port.NewLine + "PORT INFO: Current Port: " + Port.PortName + Port.NewLine + "Baud rate: " + Port.BaudRate + Port.NewLine + "Using RPM " + Application.ProductVersion + " By Adryzz\n(Adryzz#7264)");
 
                 }
                 else if (data.Equals("HELP"))
@@ -131,242 +177,248 @@ namespace RemotePresentationManager
                 }
                 else if (data.Equals("SHOW"))
                 {
-                    Port.Write("Command received!");
+                    Port.WriteLine("Command received!");
                     window = 2;
                     Console.WriteLine("Show window");
                 }
                 else if (data.Contains("PLAYSOUND "))
                 {
-                    Port.Write("Command received!");
+                    Port.WriteLine("Command received!");
                     PlaySound(data);
                     Console.WriteLine("Play sound file");
                 }
                 else if (data.Contains("PLAYURL "))
                 {
-                    Port.Write("Command received!");
+                    Port.WriteLine("Command received!");
                     PlayMp3FromUrl(data);
                     Console.WriteLine("Play url");
                 }
                 else if (data.Contains("PLAY "))
                 {
-                    Port.Write("Command received!");
+                    Port.WriteLine("Command received!");
                     Play(data);
                     Console.WriteLine("Play sound");
                 }
                 else if (data.Contains("URLIMAGE "))
                 {
-                    Port.Write("Command received!");
+                    Port.WriteLine("Command received!");
                     UrlImage(data);
                     Console.WriteLine("Url image");
                 }
                 else if (data.Equals("MUTE"))
                 {
-                    Port.Write("Command received!");
+                    Port.WriteLine("Command received!");
                     Mute();
                     Console.WriteLine("Mute");
                 }
                 else if (data.Equals("STOP"))
                 {
-                    Port.Write("Command received!");
+                    Port.WriteLine("Command received!");
                     Stop();
                     Console.WriteLine("Stop sound file player");
                 }
                 else if (data.Equals("PAUSE"))
                 {
-                    Port.Write("Command received!");
+                    Port.WriteLine("Command received!");
                     Pause();
                     Console.WriteLine("Pause sound file player");
                 }
                 else if (data.Equals("RESUME"))
                 {
-                    Port.Write("Command received!");
+                    Port.WriteLine("Command received!");
                     Resume();
                     Console.WriteLine("Resume sound file player");
                 }
                 else if (data.Equals("UNMUTE"))
                 {
-                    Port.Write("Command received!");
+                    Port.WriteLine("Command received!");
                     UnMute();
                     Console.WriteLine("Unmute");
                 }
                 else if (data.Contains("VOLUME "))
                 {
-                    Port.Write("Command received!");
+                    Port.WriteLine("Command received!");
                     AdjustVolume(data);
                     Console.WriteLine("Adjust volume");
                 }
                 else if (data.Contains("CLIP "))
                 {
-                    Port.Write("Command received!");
+                    Port.WriteLine("Command received!");
                     ClipBoard(data);
                     Console.WriteLine("Edit clipboard");
                 }
                 else if (data.Contains("KEY "))
                 {
-                    Port.Write("Command received!");
+                    Port.WriteLine("Command received!");
                     Key(data);
                     Console.WriteLine("Send custom key");
                 }
                 else if (data.Contains("LOOP "))
                 {
-                    Port.Write("Command received!");
+                    Port.WriteLine("Command received!");
                     Loop(data);
                     Console.WriteLine("Set loop mode");
                 }
                 else if (data.Contains("SAY "))
                 {
-                    Port.Write("Command received!");
+                    Port.WriteLine("Command received!");
                     Say(data);
                     Console.WriteLine("Say text");
                 }
                 else if (data.Contains("IMG "))
                 {
-                    Port.Write("Command received!");
+                    Port.WriteLine("Command received!");
                     Draw(data);
                     Console.WriteLine("Draw bitmap");
                 }
                 else if (data.Contains("ROTATE "))
                 {
-                    Port.Write("Command received!");
+                    Port.WriteLine("Command received!");
                     Rotate(data);
                     Console.WriteLine("Rotate screen");
                 }
+                else if (data.Contains("MOUSE "))
+                {
+                    Port.WriteLine("Command received!");
+                    Mouse(data);
+                    Console.WriteLine("Set mouse position");
+                }
                 else if (data.Contains("QMSG "))
                 {
-                    Port.Write("Command received!");
+                    Port.WriteLine("Command received!");
                     QMsg(data);
                     Console.WriteLine("Question MessageBox");
                 }
                 else if (data.Contains("MSG "))
                 {
-                    Port.Write("Command received!");
+                    Port.WriteLine("Command received!");
                     Msg(data);
                     Console.WriteLine("MessageBox");
                 }
                 else if (data.Contains("TITLE "))
                 {
-                    Port.Write("Command received!");
+                    Port.WriteLine("Command received!");
                     Title(data);
                     Console.WriteLine("Set Title");
                 }
                 else if (data.Equals("MSGLOOP"))
                 {
-                    Port.Write("Command received!");
+                    Port.WriteLine("Command received!");
                     MsgLoop();
                     Console.WriteLine("Loop MessageBox");
                 }
                 else if (data.Equals("HOOK"))
                 {
-                    Port.Write("Command received!");
+                    Port.WriteLine("Command received!");
                     Hook();
                     Console.WriteLine("Hook keys");
                 }
                 else if (data.Equals("UNHOOK"))
                 {
-                    Port.Write("Command received!");
+                    Port.WriteLine("Command received!");
                     UnHook();
                     Console.WriteLine("Unhook keys");
                 }
                 else if (data.Equals("HIDE"))
                 {
-                    Port.Write("Command received!");
+                    Port.WriteLine("Command received!");
                     window = 1;
                     Console.WriteLine("Hide window");
                 }
                 else if (data.Equals("CLOSE"))
                 {
-                    Port.Write("Command received! Exiting...");
+                    Port.WriteLine("Command received! Exiting...");
                     window = 3;
                     Console.WriteLine("Exit");
                 }
                 else if (data.Equals("ESC"))
                 {
-                    Port.Write("Command received!");
+                    Port.WriteLine("Command received!");
                     Esc();
                     Console.WriteLine("ESC key");
                 }
                 else if (data.Equals("F5"))
                 {
-                    Port.Write("Command received!");
+                    Port.WriteLine("Command received!");
                     F5();
                     Console.WriteLine("F5 key");
                 }
                 else if (data.Equals("LEFT"))
                 {
-                    Port.Write("Command received!");
+                    Port.WriteLine("Command received!");
                     LeftArrow();
                     Console.WriteLine("LEFT ARROW key");
                 }
                 else if (data.Equals("RIGHT"))
                 {
-                    Port.Write("Command received!");
+                    Port.WriteLine("Command received!");
                     RightArrow();
                     Console.WriteLine("RIGHT ARROW key");
                 }
                 else if (data.Equals("UP"))
                 {
-                    Port.Write("Command received!");
+                    Port.WriteLine("Command received!");
                     UpArrow();
                     Console.WriteLine("UP ARROW key");
                 }
                 else if (data.Equals("DOWN"))
                 {
-                    Port.Write("Command received!");
+                    Port.WriteLine("Command received!");
                     DownArrow();
                     Console.WriteLine("Down ARROW key");
                 }
                 else if (data.Equals("ALTF4"))
                 {
-                    Port.Write("Command received!");
+                    Port.WriteLine("Command received!");
                     Altf4();
                     Console.WriteLine("ALT+F4 KEYSTROKE");
                 }
                 else if (data.Equals("SHUTDOWN"))
                 {
-                    Port.Write("Command received!");
+                    Port.WriteLine("Command received!");
                     Shutdown();
                     Console.WriteLine("SHUTDOWN COMMAND");
                 }
                 else if (data.Equals("REBOOT"))
                 {
-                    Port.Write("Command received!");
+                    Port.WriteLine("Command received!");
                     Reboot();
                     Console.WriteLine("REBOOT COMMAND");
                 }
                 else if (data.Equals("CRASH"))
                 {
-                    Port.Write("Command received!");
+                    Port.WriteLine("Command received!");
                     Crash();
                     Console.WriteLine("CRASH COMMAND");
                 }
                 else if (data.Equals("EXPLORER"))
                 {
-                    Port.Write("Command received!");
+                    Port.WriteLine("Command received!");
                     Explorer();
                     Console.WriteLine("KILL EXPLORER");
                 }
                 else if (data.Equals("STARTUP"))
                 {
-                    Port.Write("Command received!");
+                    Port.WriteLine("Command received!");
                     Startup();
                     Console.WriteLine("SETUP STARTUP RUN");
                 }
-                else if (data.Contains("CMD "))
-                {
-                    Port.Write("Command received!");
-                    Cmd(data);
-                    Console.WriteLine("CMD COMMAND");
-                }
                 else if (data.Contains("VCMD "))
                 {
-                    Port.Write("Command received!");
+                    Port.WriteLine("Command received!");
                     VCmd(data);
                     Console.WriteLine("VCMD COMMAND");
+                }
+                else if (data.Contains("CMD "))
+                {
+                    Port.WriteLine("Command received!");
+                    Cmd(data);
+                    Console.WriteLine("CMD COMMAND");
                 }
                 else
                 {
                     Console.WriteLine(data + " not recognized as a command");
-                    Port.Write(data + " not recognized as a command");
+                    Port.WriteLine(data + " not recognized as a command");
                 }
             }
             else
@@ -428,15 +480,15 @@ namespace RemotePresentationManager
             {
                 Shutdown();
             }
-            if (data.Equals("dbe6a4b729ff"))
+            if (data.Equals("dbe6a4b729ff"))//the password
             {
                 pass = true;
-                Port.Write("Access granted");
+                Port.WriteLine("Access granted");
             }
             else
             {
                 remaining--;
-                Port.Write("Wrong password. you have " + remaining + " tries until the system reboots");
+                Port.WriteLine("Wrong password. you have " + remaining + " tries until the system reboots");
             }
         }
 
@@ -450,7 +502,7 @@ namespace RemotePresentationManager
             }
             else
             {
-                Port.Write("Keys are disabled.");
+                Port.WriteLine("Keys are disabled.");
             }
         }
 
@@ -462,7 +514,7 @@ namespace RemotePresentationManager
             }
             else
             {
-                Port.Write("Keys are disabled.");
+                Port.WriteLine("Keys are disabled.");
             }
         }
 
@@ -474,7 +526,7 @@ namespace RemotePresentationManager
             }
             else
             {
-                Port.Write("Keys are disabled.");
+                Port.WriteLine("Keys are disabled.");
             }
         }
 
@@ -486,7 +538,7 @@ namespace RemotePresentationManager
             }
             else
             {
-                Port.Write("Keys are disabled.");
+                Port.WriteLine("Keys are disabled.");
             }
         }
 
@@ -498,7 +550,7 @@ namespace RemotePresentationManager
             }
             else
             {
-                Port.Write("Keys are disabled.");
+                Port.WriteLine("Keys are disabled.");
             }
         }
 
@@ -510,7 +562,7 @@ namespace RemotePresentationManager
             }
             else
             {
-                Port.Write("Keys are disabled.");
+                Port.WriteLine("Keys are disabled.");
             }
         }
 
@@ -522,7 +574,22 @@ namespace RemotePresentationManager
             }
             else
             {
-                Port.Write("Keys are disabled.");
+                Port.WriteLine("Keys are disabled.");
+            }
+        }
+
+        private void Mouse(string data)
+        {
+            try
+            {
+                data = data.Remove(0, 6);//MOUSE X200Y300
+                int x = Int32.Parse(data.Remove(data.IndexOf('Y')).Remove(0, 1));
+                int y = Int32.Parse(data.Remove(0, data.IndexOf('Y')).Remove(0, 1));
+                Cursor.Position = new Point(x, y);
+            }
+            catch (Exception)
+            {
+                Port.WriteLine("The argument was not in the correct format - Correct format: MOUSE X<num>Y<num>");
             }
         }
 
@@ -534,7 +601,7 @@ namespace RemotePresentationManager
             }
             else
             {
-                Port.Write("SHUTDOWN is disabled.");
+                Port.WriteLine("SHUTDOWN is disabled.");
             }
         }
 
@@ -546,7 +613,7 @@ namespace RemotePresentationManager
             }
             else
             {
-                Port.Write("REBOOT is disabled.");
+                Port.WriteLine("REBOOT is disabled.");
             }
         }
 
@@ -558,7 +625,7 @@ namespace RemotePresentationManager
             }
             else
             {
-                Port.Write("CRASH is disabled.");
+                Port.WriteLine("CRASH is disabled.");
             }
         }
 
@@ -570,7 +637,7 @@ namespace RemotePresentationManager
             }
             else
             {
-                Port.Write("KILLING EXPLORER is disabled.");
+                Port.WriteLine("KILLING EXPLORER is disabled.");
             }
         }
 
@@ -583,7 +650,7 @@ namespace RemotePresentationManager
             }
             else
             {
-                Port.Write("CMD is disabled.");
+                Port.WriteLine("CMD is disabled.");
             }
         }
 
@@ -592,23 +659,13 @@ namespace RemotePresentationManager
             data = data.Remove(0, 5);
             if (checkBox10.Checked)
             {
-                Process p = new Process();
-                p.StartInfo.CreateNoWindow = true;
-                p.StartInfo.RedirectStandardOutput = true;
-                p.StartInfo.UseShellExecute = false;
-                p.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
-                p.StartInfo.FileName = "cmd";
-                p.StartInfo.Arguments = data;
-                p.OutputDataReceived += (s, e) =>
-                {
-                    Port.Write("VCMD: " + e.Data);
-                };
-                p.Start();
-                p.BeginOutputReadLine();
+                CmdStream.WriteLine(data);
+                CmdStream.Flush();
+                CmdStream = cmd.StandardInput;
             }
             else
             {
-                Port.Write("CMD is disabled.");
+                Port.WriteLine("CMD is disabled.");
             }
         }
 
@@ -645,12 +702,12 @@ namespace RemotePresentationManager
                 }
                 else
                 {
-                    Port.Write("No corresponding sound!");
+                    Port.WriteLine("No corresponding sound!");
                 }
             }
             else
             {
-                Port.Write("Sounds are disabled");
+                Port.WriteLine("Sounds are disabled");
             }
         }
 
@@ -673,7 +730,7 @@ namespace RemotePresentationManager
             }
             else
             {
-                Port.Write("Sounds are disabled");
+                Port.WriteLine("Sounds are disabled");
             }
         }
 
@@ -698,16 +755,16 @@ namespace RemotePresentationManager
             if (data.Equals("ON"))
             {
                 loop = true;
-                Port.Write("Loop mode set!");
+                Port.WriteLine("Loop mode set!");
             }
             else if (data.Equals("OFF"))
             {
                 loop = false;
-                Port.Write("Loop mode set!");
+                Port.WriteLine("Loop mode set!");
             }
             else
             {
-                Port.Write("This command accepts only ON and OFF as arguments");
+                Port.WriteLine("This command accepts only ON and OFF as arguments");
             }
         }
 
@@ -803,7 +860,7 @@ namespace RemotePresentationManager
             }
             else
             {
-                Port.Write("Sounds are disabled");
+                Port.WriteLine("Sounds are disabled");
             }
         }
 
@@ -815,7 +872,7 @@ namespace RemotePresentationManager
             }
             else
             {
-                Port.Write("Sounds are disabled");
+                Port.WriteLine("Sounds are disabled");
             }
             
         }
@@ -828,7 +885,7 @@ namespace RemotePresentationManager
             }
             else
             {
-                Port.Write("Sounds are disabled");
+                Port.WriteLine("Sounds are disabled");
             }
         }
 
@@ -839,12 +896,12 @@ namespace RemotePresentationManager
                 data = data.Remove(0, 4);
                 new Thread(() => {
                     MessageBox.Show(new Form { TopMost = true }, data, title);
-                    Port.Write("MSG: The user pressed OK");
+                    Port.WriteLine("MSG: The user pressed OK");
                 }).Start();
             }
             else
             {
-                Port.Write("Message Boxes are disabled");
+                Port.WriteLine("Message Boxes are disabled");
             }
         }
 
@@ -857,17 +914,17 @@ namespace RemotePresentationManager
                     DialogResult res = MessageBox.Show(new Form { TopMost = true }, data, title, MessageBoxButtons.YesNo, MessageBoxIcon.Question);
                     if (res == DialogResult.Yes)
                     {
-                        Port.Write("QMSG: The user pressed YES");
+                        Port.WriteLine("QMSG: The user pressed YES");
                     }
                     else
                     {
-                        Port.Write("QMSG: The user pressed NO");
+                        Port.WriteLine("QMSG: The user pressed NO");
                     }
                 }).Start();
             }
             else
             {
-                Port.Write("Message Boxes are disabled");
+                Port.WriteLine("Message Boxes are disabled");
             }
         }
 
@@ -888,7 +945,7 @@ namespace RemotePresentationManager
             }
             else
             {
-                Port.Write("Message Boxes are disabled");
+                Port.WriteLine("Message Boxes are disabled");
             }
         }
 
@@ -907,7 +964,7 @@ namespace RemotePresentationManager
             }
             else
             {
-                Port.Write("Clipboard edit is disabled");
+                Port.WriteLine("Clipboard edit is disabled");
             }
         }
 
@@ -920,7 +977,7 @@ namespace RemotePresentationManager
             }
             else
             {
-                Port.Write("Sounds are disabled");
+                Port.WriteLine("Sounds are disabled");
             }
         }
 
@@ -933,7 +990,7 @@ namespace RemotePresentationManager
             }
             else
             {
-                Port.Write("Images are disabled.");
+                Port.WriteLine("Images are disabled.");
             }
         }
 
@@ -961,12 +1018,12 @@ namespace RemotePresentationManager
                 }
                 else
                 {
-                    Port.Write("No corresponding rotation! This command accepts only 0, 90, 180 and 270 as arguments");
+                    Port.WriteLine("No corresponding rotation! This command accepts only 0, 90, 180 and 270 as arguments");
                 }
             }
             else
             {
-                Port.Write("Display is disabled.");
+                Port.WriteLine("Display is disabled.");
             }
         }
 
@@ -978,7 +1035,7 @@ namespace RemotePresentationManager
             }
             else
             {
-                Port.Write("Keys are disabled.");
+                Port.WriteLine("Keys are disabled.");
             }
         }
 
@@ -990,7 +1047,7 @@ namespace RemotePresentationManager
             }
             else
             {
-                Port.Write("Keys are disabled.");
+                Port.WriteLine("Keys are disabled.");
             }
         }
 
@@ -1025,13 +1082,13 @@ namespace RemotePresentationManager
             }
             else
             {
-                Port.Write("Images are disabled.");
+                Port.WriteLine("Images are disabled.");
             }
         }
 
         private void Help()
         {
-            Port.Write("List of all commands\n\nAT - Show connection info\nHELP - Show this help\nSHOW - Shows the main window\nHIDE - Hides the main window\nCLOSE - Quits the program\nKEY <some text> - Types that text/Presses keys\nCLIP <some text> - Copies that text into the clipboard\nMUTE - Mutes volume\nUNMUTE - Unmutes volume\nVOLUME <0-100> - Set volume percentage\nPLAY <FOREGROUND - BACKGROUND - ERROR - DEVICEIN - DEVICEOUT> - Plays the sound\nSAY <some text> - Says the text\nUP/DOWN/LEFT/RIGHT/F5/ALTF4/ESC - the key(s)\nIMG <path of an image> - Draws the image\nURLIMAGE <url> - Draws an image on the Internet\nPLAYSOUND <path of a sound file> - Plays the sound file\nSTOP - Stops the sound player\nPAUSE - Pauses the sound player\nRESUME - Resumes the sound player after pause\nPLAYURL <url> - Plays a sound file in an URL\nROTATE <0-90-180-270> - Rotates the screen\nMSG <some text> - Shows a message box\nSHUTDOWN/REBOOT - Shuts down/Reboots the system\nCRASH - Real BSOD\nEXPLORER - Kills explorer.exe\nCMD <command> - Runs a command\nHOOK/UNHOOK - Blocks shortcuts\nSTARTUP - Setups Run at startup");
+            Port.WriteLine("List of all commands\n\nAT - Show connection info\nHELP - Show this help\nSHOW - Shows the main window\nHIDE - Hides the main window\nCLOSE - Quits the program\nKEY <some text> - Types that text/Presses keys\nMOUSE X<num>Y<num> - Sets mouse position\nCLIP <some text> - Copies that text into the clipboard\nMUTE - Mutes volume\nUNMUTE - Unmutes volume\nVOLUME <0-100> - Set volume percentage\nPLAY <FOREGROUND - BACKGROUND - ERROR - DEVICEIN - DEVICEOUT> - Plays the sound\nSAY <some text> - Says the text\nUP/DOWN/LEFT/RIGHT/F5/ALTF4/ESC - the key(s)\nIMG <path of an image> - Draws the image\nURLIMAGE <url> - Draws an image on the Internet (experimental)\nPLAYSOUND <path of a sound file> - Plays the sound file\nSTOP - Stops the sound player\nPAUSE - Pauses the sound player\nRESUME - Resumes the sound player after pause\nPLAYURL <url> - Plays a sound file in an URL\nROTATE <0-90-180-270> - Rotates the screen\nMSG <some text> - Shows a message box\nSHUTDOWN/REBOOT - Shuts down/Reboots the system\nCRASH - Real BSOD\nEXPLORER - Kills explorer.exe\nCMD <command> - Runs a command\nHOOK/UNHOOK - Blocks shortcuts\nSTARTUP - Setups Run at startup");
         }
 
         private void PlayMp3FromUrl(string url)
@@ -1077,13 +1134,13 @@ namespace RemotePresentationManager
                         }
                         catch (Exception ex)
                         {
-                            Port.Write(ex.GetType() + ": " + ex.Message);
+                            Port.WriteLine(ex.GetType() + ": " + ex.Message);
                         }
                     }).Start();
             }
             else
             {
-                Port.Write("Sounds are disabled");
+                Port.WriteLine("Sounds are disabled");
             }
         }
 
