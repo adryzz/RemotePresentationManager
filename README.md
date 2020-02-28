@@ -3,7 +3,7 @@ Remote control a PC and make jokes.
 
 Works over Bluetooth, and specifically made to be easy to control by any Bluetooth capable Android phone. (see the wiki for how 2 setup)
 
-PLEASE USE THIS ON YOUR OWN PC OR ON PCs THAT YOU HAVE THE CONSENT OF USING.
+PLEASE USE THIS ON YOUR OWN PC OR ON PCs THAT YOU HAVE THE CONSENT OF USING THIS ON.
 
 (I'M NOT RESPONSIBLE FOR ANYTHING)
 
