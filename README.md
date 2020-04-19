@@ -3,6 +3,10 @@ Remote control a PC and make jokes.
 
 Works over Bluetooth, and specifically made to be easy to control by any Bluetooth capable Android phone. (see the wiki for how 2 setup)
 
+Added custom password support with SHA512 hash in v4.1.0!! in order to use it, check out this => https://github.com/adryzz/RPMPasswordSet
+
+I need to update the wiki for how 2 set the custom password and so on, and i will do it soon so stay tuned!
+
 PLEASE USE THIS ON YOUR OWN PC OR ON PCs THAT YOU HAVE THE CONSENT OF USING THIS ON.
 
 (I'M NOT RESPONSIBLE FOR ANYTHING)
