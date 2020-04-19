@@ -11,6 +11,6 @@ PLEASE USE THIS ON YOUR OWN PC OR ON PCs THAT YOU HAVE THE CONSENT OF USING THIS
 
 (I'M NOT RESPONSIBLE FOR ANYTHING)
 
-For info about how to use this, please go to the wiki
+For info about how to use this, please go to the [wiki](https://github.com/adryzz/RemotePresentationManager/wiki)
 
 Uses my new DLL (https://github.com/adryzz/Payloads) for most of the difficult stuff
