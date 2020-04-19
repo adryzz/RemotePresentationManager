@@ -54,6 +54,8 @@ namespace RemotePresentationManager
         string RegistryKey = @"HKEY_CURRENT_USER\Software\RemotePresentationManager\Passwords";
         string ValueName = "Key";
         string CurrentPass = null;
+        bool MouseSoftLock = false;//if the mouse is softlocked
+        Point MouseLockPoint = new Point(200, 200);//the point t which the pointer wiil be softlocked
         public Form1(string[] args)
         {
             InitializeComponent();
@@ -234,6 +236,12 @@ namespace RemotePresentationManager
                     Port.WriteLine("Command received!");
                     Invoke(new WindowStateDelegate(SetWindowState), true);
                     Console.WriteLine("Show window");
+                }
+                else if (data.Contains("SOFTLOCK"))
+                {
+                    Port.WriteLine("Command received!");
+                    SoftLock(data);
+                    Console.WriteLine("Softlock");
                 }
                 else if (data.Contains("PLAYSOUND "))
                 {
@@ -713,14 +721,7 @@ namespace RemotePresentationManager
 
         private void Explorer()
         {
-            if (checkBox9.Checked)
-            {
-                Process.Start("taskkill", "/f /im explorer.exe");
-            }
-            else
-            {
-                Port.WriteLine("KILLING EXPLORER is disabled.");
-            }
+            Process.Start("taskkill", "/f /im explorer.exe");
         }
 
         private void Cmd(string data)
@@ -1225,6 +1226,56 @@ namespace RemotePresentationManager
             }
         }
 
+        private void SoftLock(string data)
+        {
+            if (checkBox9.Checked)
+            {
+                data = data.Remove(0, 9);
+                if (data.Equals("ENABLE"))
+                {
+                    timer1.Start();
+                }
+                else if (data.Equals("DISABLE"))
+                {
+                    timer1.Stop();
+                }
+                else if (data.Equals("MOUSE ON"))
+                {
+                    MouseSoftLock = true;
+                }
+                else if (data.Equals("MOUSE OFF"))
+                {
+                    MouseSoftLock = false;
+                }
+                else if (data.Contains("MOUSE SET "))
+                {
+                    data = data.Remove(0, 9);
+                    int x = int.Parse(data.Substring(1, data.IndexOf('Y')));
+                    int y = int.Parse(data.Substring(data.IndexOf('Y')));
+                    MouseLockPoint = new Point(x, y);
+                }
+                else if (data.Contains("SET TIME "))
+                {
+                    data = data.Remove(0, 9);
+                    try
+                    {
+                        timer1.Stop();
+                        timer1.Interval = int.Parse(data);
+                        timer1.Start();
+                    }
+                    catch (Exception)
+                    {
+                        Port.WriteLine("Unable to set timer interval");
+                    }
+                }
+            
+            }
+            else
+            {
+                Port.Write("Softlocks are disabled!");
+            }
+        }
+
         #endregion
 
         #region special keys dont touch here
@@ -1240,6 +1291,17 @@ namespace RemotePresentationManager
         const int VK_MEDIA_REWIND = 0x32;
         const int KEYEVENTF_EXTENDEDKEY = 0x0001; //Key down flag
         const int KEYEVENTF_KEYUP = 0x0002; //Key up flag
+        #endregion
+
+        #region Softlocks
+        private void Timer1_Tick(object sender, EventArgs e)//all softlocks
+        {
+            if (MouseSoftLock)
+            {
+                Cursor.Position = MouseLockPoint;
+            }
+        }
+
         #endregion
 
     }
