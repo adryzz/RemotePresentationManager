@@ -5,7 +5,7 @@ Works over Bluetooth, and specifically made to be easy to control by any Bluetoo
 
 Added custom password support with SHA512 hash in v4.1.0!! in order to use it, check out this => https://github.com/adryzz/RPMPasswordSet
 
-I need to update the wiki for how 2 set the custom password and so on, and i will do it soon so stay tuned!
+[Download v4.1.0](https://github.com/adryzz/RemotePresentationManager/releases)
 
 PLEASE USE THIS ON YOUR OWN PC OR ON PCs THAT YOU HAVE THE CONSENT OF USING THIS ON.
 
