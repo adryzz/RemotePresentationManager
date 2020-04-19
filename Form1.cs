@@ -19,6 +19,8 @@ using System.Net;
 using NAudio;
 using NAudio.Wave;
 using System.Windows.Media.Imaging;
+using Microsoft.Win32;
+using System.Security.Cryptography;
 
 namespace RemotePresentationManager
 {
@@ -38,6 +40,7 @@ namespace RemotePresentationManager
     {
         SerialPort Port;
         bool Connected = false;
+        bool Hide = false;//this hides the window when it is shown
         SoundPlayer Player;
         WaveOut WaveOutDevice = new WaveOut();
         AudioFileReader AudioFileReader;
@@ -48,6 +51,9 @@ namespace RemotePresentationManager
         int remaining = 5;//remaining tries
         string title = "";//title of all messageboxes
         bool loop = false;//audio loop
+        string RegistryKey = @"HKEY_CURRENT_USER\Software\RemotePresentationManager\Passwords";
+        string ValueName = "Key";
+        string CurrentPass = null;
         public Form1(string[] args)
         {
             InitializeComponent();
@@ -60,7 +66,7 @@ namespace RemotePresentationManager
             };
             if (args.Length > 0)
             {
-                Invoke(new WindowStateDelegate(SetWindowState), false);//hide window
+                Hide = true;
                 Port = new SerialPort(args[0], 9600, Parity.None, 8, StopBits.One);
                 Port.Open();
                 Port.DataReceived += new SerialDataReceivedEventHandler(Port_DataReceived);
@@ -81,6 +87,32 @@ namespace RemotePresentationManager
             foreach (string s in SerialPort.GetPortNames())
             {
                 comboBox1.Items.Add(s);
+            }
+            string current = null;
+            try
+            {
+                current = Registry.GetValue(RegistryKey, ValueName, null).ToString();
+            }
+            catch (Exception ex)
+            {
+                //MessageBox.Show(this, ex.Message, "RPMPasswordSet", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                //Application.Exit();
+            }
+            if (current == null)
+            {
+                
+            }
+            else
+            {
+                CurrentPass = current;
+            }
+        }
+
+        private void Form1_Shown(object sender, EventArgs e)
+        {
+            if (Hide)
+            {
+                Hide();
             }
         }
 
@@ -172,9 +204,9 @@ namespace RemotePresentationManager
 
         private void CheckFunctions(string data)
         {
-            data = data.Replace("\n", String.Empty);
-            data = data.Replace("\r", String.Empty);
-            data = data.Replace("\t", String.Empty);
+            data = data.Replace("\n", string.Empty);
+            data = data.Replace("\r", string.Empty);
+            data = data.Replace("\t", string.Empty);
 
             if (pass)
             {
@@ -184,6 +216,14 @@ namespace RemotePresentationManager
                     Port.WriteLine("Online!");
                     Port.WriteLine(Port.NewLine + "PORT INFO: Current Port: " + Port.PortName + Port.NewLine + "Baud rate: " + Port.BaudRate + Port.NewLine + "Using RPM " + Application.ProductVersion + " By Adryzz\n(Adryzz#7264)");
 
+                }
+                else if(data.Equals("LOCK"))
+                {
+                    Port.WriteLine("Command received! Locking...");
+                    remaining = 5;//reset remaining tries
+                    pass = false;//lock
+                    Port.WriteLine("Insert the password");
+                    Console.WriteLine("Lock system");
                 }
                 else if (data.Equals("HELP"))
                 {
@@ -456,23 +496,43 @@ namespace RemotePresentationManager
         }
 
 
-        private void Password(string data)
+        private void Password(string data)//it is reccommended to change the default password, even if it is secure (use my tool called RPMPasswordSet)
         {
             if (remaining == 0)
             {
                 Shutdown();
             }
-            if (data.Equals("dbe6a4b729ff"))//the password
+            if (CurrentPass == null)
             {
-                pass = true;
-                Port.WriteLine("Access granted");
+                if (data.Equals("dbe6a4b729ff"))//the password
+                {
+                    pass = true;
+                    Port.WriteLine("Access granted");
+                }
+                else
+                {
+                    remaining--;
+                    Port.WriteLine("Wrong password. you have " + remaining + " tries until the system shuts down");
+                }
             }
             else
             {
-                remaining--;
-                Port.WriteLine("Wrong password. you have " + remaining + " tries until the system shuts down");
+                SHA512 sha = new SHA512Managed();
+                string hash = Encoding.UTF8.GetString(sha.ComputeHash(Encoding.UTF8.GetBytes(data)));//calculate the hash of the typed password
+                if (hash.Equals(CurrentPass))//the hash of the current password
+                {
+                    pass = true;
+                    Port.WriteLine("Access granted");
+                }
+                else
+                {
+                    remaining--;
+                    Port.WriteLine("Wrong password. you have " + remaining + " tries until the system shuts down");
+                }
             }
         }
+
+        #region Delegates and stuff
 
         private delegate void WindowStateDelegate(bool visible);
 
@@ -513,6 +573,7 @@ namespace RemotePresentationManager
             Application.Exit();
         }
 
+        #endregion
 
         #region funcs
         private void Esc()
@@ -1108,7 +1169,7 @@ namespace RemotePresentationManager
 
         private void Help()
         {
-            Port.WriteLine("List of all commands\n\nAT - Show connection info\nHELP - Show this help\nSHOW - Shows the main window\nHIDE - Hides the main window\nCLOSE - Quits the program\nKEY <some text> - Types that text/Presses keys\nMOUSE X<num>Y<num> - Sets mouse position\nCLIP <some text> - Copies that text into the clipboard\nMUTE - Mutes volume\nUNMUTE - Unmutes volume\nVOLUME <0-100> - Set volume percentage\nPLAY <FOREGROUND - BACKGROUND - ERROR - DEVICEIN - DEVICEOUT> - Plays the sound\nSAY <some text> - Says the text\nUP/DOWN/LEFT/RIGHT/F5/ALTF4/ESC - the key(s)\nIMG <path of an image> - Draws the image\nURLIMAGE <url> - Draws an image on the Internet (experimental)\nPLAYSOUND <path of a sound file> - Plays the sound file\nSTOP - Stops the sound player\nPAUSE - Pauses the sound player\nRESUME - Resumes the sound player after pause\nPLAYURL <url> - Plays a sound file in an URL\nROTATE <0-90-180-270> - Rotates the screen\nMSG <some text> - Shows a message box\nSHUTDOWN/REBOOT - Shuts down/Reboots the system\nCRASH - Real BSOD\nEXPLORER - Kills explorer.exe\nCMD <command> - Runs a command\nHOOK/UNHOOK - Blocks shortcuts\nSTARTUP - Setups Run at startup");
+            Port.WriteLine("List of all commands\n\nAT - Show connection info\nLOCK - Re-lock the program as at startup\nHELP - Show this help\nSHOW - Shows the main window\nHIDE - Hides the main window\nCLOSE - Quits the program\nKEY <some text> - Types that text/Presses keys\nMOUSE X<num>Y<num> - Sets mouse position\nCLIP <some text> - Copies that text into the clipboard\nMUTE - Mutes volume\nUNMUTE - Unmutes volume\nVOLUME <0-100> - Set volume percentage\nPLAY <FOREGROUND - BACKGROUND - ERROR - DEVICEIN - DEVICEOUT> - Plays the sound\nSAY <some text> - Says the text\nUP/DOWN/LEFT/RIGHT/F5/ALTF4/ESC - the key(s)\nIMG <path of an image> - Draws the image\nURLIMAGE <url> - Draws an image on the Internet (experimental)\nPLAYSOUND <path of a sound file> - Plays the sound file\nSTOP - Stops the sound player\nPAUSE - Pauses the sound player\nRESUME - Resumes the sound player after pause\nPLAYURL <url> - Plays a sound file in an URL\nROTATE <0-90-180-270> - Rotates the screen\nMSG <some text> - Shows a message box\nSHUTDOWN/REBOOT - Shuts down/Reboots the system\nCRASH - Real BSOD\nEXPLORER - Kills explorer.exe\nCMD <command> - Runs a command\nHOOK/UNHOOK - Blocks shortcuts\nSTARTUP - Setups Run at startup");
         }
 
         private void PlayMp3FromUrl(string url)
@@ -1180,5 +1241,6 @@ namespace RemotePresentationManager
         const int KEYEVENTF_EXTENDEDKEY = 0x0001; //Key down flag
         const int KEYEVENTF_KEYUP = 0x0002; //Key up flag
         #endregion
+
     }
 }
