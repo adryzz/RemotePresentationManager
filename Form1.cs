@@ -22,6 +22,18 @@ using System.Windows.Media.Imaging;
 
 namespace RemotePresentationManager
 {
+
+    /*
+     * This project is made by Adryzz and it is under GNU Gpl v3 or newer version (at your own choice)
+     * You can find the license at (https://github.com/adryzz/RemotePresentationManager/LICENSE)
+     * This project IS open source and will remain open-source.
+     * Feel free to take some code snippets from this project (the code here needs to be improved), (link the source of that code in your project)
+     * You can find this project and compiled binaries (x86 and x64) here: https://github.com/adryzz/RemotePresentationManager
+     * Hope this will be helpful
+     * Feel free to contact me for anything related to this at my discord (Adryzz#7264)
+     * (do NOT remove or edit this comment in any way if you are distributing this file or part of it)
+     */
+
     public partial class Form1 : Form
     {
         SerialPort Port;
@@ -32,8 +44,6 @@ namespace RemotePresentationManager
         CoreAudioDevice DefaultPlaybackDevice = new CoreAudioController().DefaultPlaybackDevice;
         Process cmd = new Process();
         StreamWriter CmdStream;
-        int window = 0;//Window mode. used to avoid Invoke()
-        string clip = "";//Clipboard text
         bool pass = false;//Password protection
         int remaining = 5;//remaining tries
         string title = "";//title of all messageboxes
@@ -50,7 +60,7 @@ namespace RemotePresentationManager
             };
             if (args.Length > 0)
             {
-                window = 1;
+                Invoke(new WindowStateDelegate(SetWindowState), false);//hide window
                 Port = new SerialPort(args[0], 9600, Parity.None, 8, StopBits.One);
                 Port.Open();
                 Port.DataReceived += new SerialDataReceivedEventHandler(Port_DataReceived);
@@ -155,13 +165,17 @@ namespace RemotePresentationManager
             }
             catch (Exception ex)
             {
-
+                Debug.WriteLine(ex.Message);
             }
             
         }
 
         private void CheckFunctions(string data)
         {
+            data = data.Replace("\n", String.Empty);
+            data = data.Replace("\r", String.Empty);
+            data = data.Replace("\t", String.Empty);
+
             if (pass)
             {
                 if (data.Equals("AT"))
@@ -178,7 +192,7 @@ namespace RemotePresentationManager
                 else if (data.Equals("SHOW"))
                 {
                     Port.WriteLine("Command received!");
-                    window = 2;
+                    Invoke(new WindowStateDelegate(SetWindowState), true);
                     Console.WriteLine("Show window");
                 }
                 else if (data.Contains("PLAYSOUND "))
@@ -322,13 +336,13 @@ namespace RemotePresentationManager
                 else if (data.Equals("HIDE"))
                 {
                     Port.WriteLine("Command received!");
-                    window = 1;
+                    Invoke(new WindowStateDelegate(SetWindowState), false);
                     Console.WriteLine("Hide window");
                 }
                 else if (data.Equals("CLOSE"))
                 {
                     Port.WriteLine("Command received! Exiting...");
-                    window = 3;
+                    Invoke(new ExitDelegate(Exit));
                     Console.WriteLine("Exit");
                 }
                 else if (data.Equals("ESC"))
@@ -441,38 +455,6 @@ namespace RemotePresentationManager
             }
         }
 
-        private void Timer1_Tick(object sender, EventArgs e)
-        {
-            if (window == 1)
-            {
-                Hide();
-                window = 0;
-            }
-            else if (window == 2)
-            {
-                Show();
-                window = 0;
-            }
-            else if (window == 3)
-            {
-                if (AudioFileReader != null)
-                {
-                    AudioFileReader.Dispose();
-                }
-                if (WaveOutDevice != null)
-                {
-                    WaveOutDevice.Dispose();
-                }
-                Connected = false;
-                Application.Exit();
-            }
-            else if (window == 4)
-            {
-                Clipboard.SetText(clip);
-                window = 0;
-            }
-
-        }
 
         private void Password(string data)
         {
@@ -488,8 +470,47 @@ namespace RemotePresentationManager
             else
             {
                 remaining--;
-                Port.WriteLine("Wrong password. you have " + remaining + " tries until the system reboots");
+                Port.WriteLine("Wrong password. you have " + remaining + " tries until the system shuts down");
             }
+        }
+
+        private delegate void WindowStateDelegate(bool visible);
+
+        private void SetWindowState(bool visible)
+        {
+            if (visible)
+            {
+                Show();
+            }
+            else
+            {
+                Hide();
+            }
+        }
+
+        private delegate void SetClipboardDelegate(string data);
+
+        private void SetClipboard(string data)
+        {
+            Clipboard.SetText(data);
+        }
+
+        private delegate void ExitDelegate();
+
+        private void Exit()
+        {
+            if (AudioFileReader != null)
+            {
+                AudioFileReader.Dispose();
+            }
+            if (WaveOutDevice != null)
+            {
+                WaveOutDevice.Dispose();
+            }
+            Port.Close();
+            Port.Dispose();
+            Connected = false;
+            Application.Exit();
         }
 
 
@@ -959,8 +980,7 @@ namespace RemotePresentationManager
             if (checkBox4.Checked)
             {
                 data = data.Remove(0, 5);
-                clip = data;
-                window = 4;
+                Invoke(new SetClipboardDelegate(SetClipboard), data);
             }
             else
             {
