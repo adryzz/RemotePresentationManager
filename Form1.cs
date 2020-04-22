@@ -575,8 +575,6 @@ namespace RemotePresentationManager
             {
                 WaveOutDevice.Dispose();
             }
-            Port.Close();
-            Port.Dispose();
             Connected = false;
             Application.Exit();
         }
