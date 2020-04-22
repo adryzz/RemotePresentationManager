@@ -12,6 +12,7 @@ Works over Bluetooth, it is specifically made to be easy to control by any Andro
 4. Display images on the screen, message boxes...
 5. Runs at startup, so that you don't need to worry about starting it.
 6. You can copy text into the clipboard, rotate the screen and MUCH more!
+
 For specific info about all the features, have a look at the [Commands wiki](https://github.com/adryzz/RemotePresentationManager/wiki/Commands)
 
 PLEASE USE THIS ON YOUR OWN PC OR ON PCs THAT YOU HAVE THE CONSENT OF USING THIS ON. Do this at YOUR OWN risk.
