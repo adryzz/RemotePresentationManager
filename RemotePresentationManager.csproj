@@ -60,7 +60,7 @@
       <HintPath>..\packages\NAudio.1.10.0\lib\net35\NAudio.dll</HintPath>
     </Reference>
     <Reference Include="Payloads">
-      <HintPath>..\..\Payloads\Payloads\bin\Debug\Payloads.dll</HintPath>
+      <HintPath>..\..\Payloads\Payloads\bin\Release\Payloads.dll</HintPath>
     </Reference>
     <Reference Include="PresentationCore" />
     <Reference Include="System" />
@@ -74,6 +74,9 @@
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
+    <Reference Include="WindowsAPI">
+      <HintPath>..\..\..\..\Desktop\Windows-Hacks-master\External\WindowsAPI.dll</HintPath>
+    </Reference>
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
