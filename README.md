@@ -20,7 +20,7 @@ PLEASE USE THIS ON YOUR OWN PC OR ON PCs THAT YOU HAVE THE CONSENT OF USING THIS
 **For info about how to setup and use this, please go to the** [**wiki**](https://github.com/adryzz/RemotePresentationManager/wiki)
 
 Pre-compiled version
-[Download v4.1.0](https://github.com/adryzz/RemotePresentationManager/releases/latest)
+[Download v4.3.0](https://github.com/adryzz/RemotePresentationManager/releases/latest)
 
 If you are a programmer, feel free to take code snippets! (Put a link to this project in the code section)
 
