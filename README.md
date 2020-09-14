@@ -4,6 +4,9 @@ Hello!!!
 This piece of software was originally made to control a PC at school to make a cool presentation, but after i've added more and more features, it has become another kind of software (Still useful at school xD)
 
 Works over Bluetooth, it is specifically made to be easy to control by any Android phone.
+EDIT: From 5.0.0 it now works over Bluetooth AND over a telegram bot.
+
+(Create a file named "token.txt" with the bot token in the exe directory and it will pick it up and work)
 
 ## Features: 
 1. Control keyboard and mouse
