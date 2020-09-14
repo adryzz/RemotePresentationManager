@@ -8,6 +8,7 @@ namespace RemotePresentationManager
 {
     static class Program
     {
+        public static Form1 Form1;
         /// <summary>
         /// Punto di ingresso principale dell'applicazione.
         /// </summary>
@@ -16,7 +17,8 @@ namespace RemotePresentationManager
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new Form1(args));
+            Form1 = new Form1();
+            Application.Run(Form1);
         }
     }
 }
