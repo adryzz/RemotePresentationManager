@@ -95,7 +95,6 @@ namespace RemotePresentationManager
 
         private string GetBotToken()
         {
-            //return "1300044392:AAE0Hum_J57MtC1gxtSKbT2STnJhAkRzGBk";
             if (File.Exists("token.txt"))
             {
                 return File.ReadAllText("token.txt");
