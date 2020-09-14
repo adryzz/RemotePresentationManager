@@ -21,12 +21,12 @@ For the wiki update, you'll have to wait until i have some free time.
 
 For specific info about all the features, have a look at the [Commands wiki](https://github.com/adryzz/RemotePresentationManager/wiki/Commands)
 
-PLEASE USE THIS ON YOUR OWN PC OR ON PCs THAT YOU HAVE THE CONSENT OF USING THIS ON. Do this at YOUR OWN risk.
+PLEASE USE THIS ON YOUR OWN PC OR ON PCs THAT YOU HAVE THE PERMISSION OF USING THIS ON. Do this at YOUR OWN risk.
 
 **For info about how to setup and use this, please go to the** [**wiki**](https://github.com/adryzz/RemotePresentationManager/wiki)
 
 Pre-compiled version
-[Download v4.3.0](https://github.com/adryzz/RemotePresentationManager/releases/latest)
+[Download v5.0.0](https://github.com/adryzz/RemotePresentationManager/releases/latest)
 
 If you are a programmer, feel free to take code snippets! (Put a link to this project in the code section)
 
