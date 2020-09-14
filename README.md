@@ -9,6 +9,8 @@ Works over Bluetooth, it is specifically made to be easy to control by any Andro
 
 (Create a file named "token.txt" with the bot token in the exe directory and it will pick it up and work)
 
+For the wiki update, you'll have to wait until i have some free time.
+
 ## Features: 
 1. Control keyboard and mouse
 2. Play sounds, even from the Internet
