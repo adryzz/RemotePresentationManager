@@ -57,7 +57,7 @@ namespace RemotePresentationManager
         public TelegramServer TelegramBot;
         public SerialServer Serial;
 
-        public Form1()
+        public Form1(string[] args)
         {
             InitializeComponent();
             WaveOutDevice.PlaybackStopped += (s, e) =>
@@ -67,6 +67,10 @@ namespace RemotePresentationManager
                     WaveOutDevice.Play();
                 }
             };
+            if (args.Length > 0)
+                if (args[0].Equals("WEBONLY"))
+                    HideWindow = true;
+
             string token = GetBotToken();
             if (token != null)
                 TelegramBot = new TelegramServer(token, GetPasswordHash());
@@ -126,7 +130,7 @@ namespace RemotePresentationManager
                 //Application.Exit();
             }
 
-            if (Environment.GetCommandLineArgs().Length > 0)
+            if (Environment.GetCommandLineArgs().Length > 1 && !Environment.GetCommandLineArgs()[1].Equals("WEBONLY"))
             {
                 Serial = new SerialServer();
             }
@@ -144,25 +148,7 @@ namespace RemotePresentationManager
         private void Button1_Click(object sender, EventArgs e)
         {
 
-            /*try
-            {
-                Port = new SerialPort(comboBox1.SelectedItem.ToString(), 9600, Parity.None, 8, StopBits.One);
-                Port.Open();
-                Port.DataReceived += new SerialDataReceivedEventHandler(Port_DataReceived);
-                if (Port.IsOpen)
-                {
-                    Port.WriteLine("Insert the password");
-                    button1.Enabled = false;
-                    listBox1.Items.Clear();
-                    listBox1.Items.Add("Status: " + Port.PortName + " online");
-                    Connected = true;
-                    InitializeCmd();
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message);
-            }*/
+            Serial = new SerialServer(comboBox1.SelectedItem.ToString());
         }
 
         private void ComboBox1_SelectedIndexChanged(object sender, EventArgs e)
@@ -188,6 +174,7 @@ namespace RemotePresentationManager
                 cmd.StartInfo.ErrorDialog = false;
                 cmd.OutputDataReceived += new DataReceivedEventHandler((s, e) =>
                 {
+                    if (Serial != null)
                     if (Serial.pass)
                     {
                         Serial.Port.WriteLine("VCMD: " + e.Data);
@@ -199,6 +186,7 @@ namespace RemotePresentationManager
                 });
                 cmd.ErrorDataReceived += new DataReceivedEventHandler((s, e) =>
                 {
+                    if (Serial != null)
                     if (Serial.pass)
                     {
                         Serial.Port.WriteLine("VCMD: " + e.Data);
@@ -210,6 +198,7 @@ namespace RemotePresentationManager
                 });
                 cmd.Exited += new EventHandler((s, e) =>
                 {
+                    if (Serial != null)
                     if (Serial.pass)
                     {
                         Serial.Port.WriteLine("VCMD: The CMD has exited");

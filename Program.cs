@@ -17,7 +17,7 @@ namespace RemotePresentationManager
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Form1 = new Form1();
+            Form1 = new Form1(args);
             Application.Run(Form1);
         }
     }

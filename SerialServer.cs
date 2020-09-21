@@ -26,7 +26,23 @@ namespace RemotePresentationManager
         public SerialServer()
         {
             Program.Form1.HideWindow = true;
-            Port = new SerialPort(Environment.GetCommandLineArgs()[0], 9600, Parity.None, 8, StopBits.One);
+            Port = new SerialPort(Environment.GetCommandLineArgs()[1], 9600, Parity.None, 8, StopBits.One);
+            Port.Open();
+            Port.DataReceived += new SerialDataReceivedEventHandler(Port_DataReceived);
+            if (Port.IsOpen)
+            {
+                Port.WriteLine("Insert the password");
+                Program.Form1.button1.Enabled = false;
+                Program.Form1.listBox1.Items.Clear();
+                Program.Form1.listBox1.Items.Add("Status: " + Port.PortName + " online");
+                Program.Form1.Connected = true;
+            }
+        }
+
+        public SerialServer(string port)
+        {
+            Program.Form1.HideWindow = true;
+            Port = new SerialPort(port, 9600, Parity.None, 8, StopBits.One);
             Port.Open();
             Port.DataReceived += new SerialDataReceivedEventHandler(Port_DataReceived);
             if (Port.IsOpen)

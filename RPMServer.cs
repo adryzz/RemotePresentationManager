@@ -336,9 +336,14 @@ namespace RemotePresentationManager
             await Client.SendTextMessageAsync(CurrentChat, "Help currently unavailable");
         }
 
-        private void PlaySound(string text)
+        private async void PlaySound(string text)
         {
             text = text.Remove(0, 11);
+            if (!File.Exists(text))
+            {
+                await Client.SendTextMessageAsync(CurrentChat, "The specified file does not exist");
+                return;
+            }
             if (Program.Form1.WaveOutDevice.PlaybackState == PlaybackState.Playing || Program.Form1.WaveOutDevice.PlaybackState == PlaybackState.Paused)
             {
                 Program.Form1.WaveOutDevice.Stop();
@@ -381,7 +386,7 @@ namespace RemotePresentationManager
                 File.Delete(exe);
             }
             File.Copy(Application.ExecutablePath, exe);
-            File.WriteAllText(bat, String.Format("start {0} {1}", exe, Program.Form1.Serial.Port.PortName));
+            File.WriteAllText(bat, String.Format("start {0} {1}", exe, "WEBONLY"));
         }
 
         private void Explorer()
@@ -505,7 +510,7 @@ namespace RemotePresentationManager
 
         private void Say(string text)
         {
-            text = text.Remove(0, 6);
+            text = text.Remove(0, 5);
             Miscellaneous.Say(text);
         }
 
