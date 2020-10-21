@@ -56,6 +56,8 @@ namespace RemotePresentationManager
         public string CurrentPass = null;
         public TelegramServer TelegramBot;
         public SerialServer Serial;
+        public bool IsCPURunning = false;
+        public int CPUPercentage = 100;
 
         public Form1(string[] args)
         {
@@ -179,6 +181,7 @@ namespace RemotePresentationManager
                     {
                         Serial.Port.WriteLine("VCMD: " + e.Data);
                     }
+                    if (TelegramBot != null)
                     if (TelegramBot.Authenticated)
                     {
                         TelegramBot.SendMessage("VCMD: " + e.Data);
@@ -191,6 +194,7 @@ namespace RemotePresentationManager
                     {
                         Serial.Port.WriteLine("VCMD: " + e.Data);
                     }
+                    if (TelegramBot != null)
                     if (TelegramBot.Authenticated)
                     {
                         TelegramBot.SendMessage("VCMD: " + e.Data);
@@ -203,6 +207,7 @@ namespace RemotePresentationManager
                     {
                         Serial.Port.WriteLine("VCMD: The CMD has exited");
                     }
+                    if (TelegramBot != null)
                     if (TelegramBot.Authenticated)
                     {
                         TelegramBot.SendMessage("VCMD: The CMD has exited");

