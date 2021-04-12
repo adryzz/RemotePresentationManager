@@ -1,4 +1,12 @@
 # RemotePresentationManager
+
+
+
+## This is now deprecated, please use RemoteControlV2
+[Link](https://github.com/adryzz/RemoteControlV2)
+
+### Old readme
+
 Hello!!!
 
 This piece of software was originally made to control a PC at school to make a cool presentation, but after i've added more and more features, it has become another kind of software (Still useful at school xD)
